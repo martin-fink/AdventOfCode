@@ -11,7 +11,7 @@ pub fn read_file(path: &str) -> Result<String> {
 pub fn read_lines(path: &str) -> Result<Vec<String>> {
     Ok(read_file(path)?
         .split('\n')
-        .filter(|line| !line.is_empty())
+        // .filter(|line| !line.is_empty())
         .map(String::from)
         .collect::<Vec<_>>())
 }
