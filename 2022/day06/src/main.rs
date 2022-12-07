@@ -25,15 +25,7 @@ fn main() {
     let res = slice
         .windows(14)
         .enumerate()
-        .find(|(_, window)| {
-            let mut set = HashSet::with_capacity(14);
-
-            window.iter().for_each(|c| {
-                set.insert(c);
-            });
-
-            set.len() == 14
-        })
+        .find(|(_, window)| window.iter().collect::<HashSet<_>>().len() == 14)
         .map(|(i, _)| i + 14)
         .unwrap();
 
