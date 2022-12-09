@@ -81,34 +81,26 @@ fn main() {
         .flat_map(|(dir, n)| vec![dir].repeat(n as usize))
         .collect::<Vec<_>>();
 
-    let mut rope: Rope<2> = Rope::new();
+    let mut rope_short: Rope<2> = Rope::new();
+    let mut rope_long: Rope<10> = Rope::new();
 
-    let mut visited_positions: HashSet<Position> = HashSet::new();
-    visited_positions.insert(rope.get_tail());
+    let mut visited_short: HashSet<Position> = HashSet::new();
+    let mut visited_long: HashSet<Position> = HashSet::new();
+
+    visited_short.insert(rope_short.get_tail());
+    visited_long.insert(rope_short.get_tail());
 
     for instruction in instructions.iter() {
-        rope.move_rope(*instruction);
-        visited_positions.insert(rope.get_tail());
-        println!()
+        rope_short.move_rope(*instruction);
+        rope_long.move_rope(*instruction);
+        visited_short.insert(rope_short.get_tail());
+        visited_long.insert(rope_long.get_tail());
     }
 
-    print_grid(&visited_positions);
-
-    println!("{:?}", visited_positions.len());
-    let mut rope: Rope<10> = Rope::new();
-
-    let mut visited_positions: HashSet<Position> = HashSet::new();
-    visited_positions.insert(rope.get_tail());
-
-    for instruction in instructions {
-        rope.move_rope(instruction);
-        visited_positions.insert(rope.get_tail());
-        println!()
-    }
-
-    print_grid(&visited_positions);
-
-    println!("{:?}", visited_positions.len());
+    print_grid(&visited_short);
+    println!("{:?}", visited_short.len());
+    print_grid(&visited_long);
+    println!("{:?}", visited_long.len());
 }
 
 fn print_grid(visited_positions: &HashSet<Position>) {
