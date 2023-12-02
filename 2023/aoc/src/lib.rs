@@ -1,7 +1,7 @@
-use std::fs::File;
-use std::io::Read;
 use anyhow::Context;
 use clap::Parser;
+use std::fs::File;
+use std::io::Read;
 
 #[derive(clap::Parser, Debug)]
 enum AocCommand {
@@ -26,7 +26,11 @@ fn read_file(path: std::path::PathBuf) -> anyhow::Result<String> {
     Ok(content)
 }
 
-pub fn aoc_main<F1, F2, R>(part1: F1, part2: F2) -> anyhow::Result<R> where F1: FnOnce(&str) -> R, F2: FnOnce(&str) -> R {
+pub fn aoc_main<F1, F2, R>(part1: F1, part2: F2) -> anyhow::Result<R>
+where
+    F1: FnOnce(&str) -> R,
+    F2: FnOnce(&str) -> R,
+{
     let command = AocCommand::parse();
     let result = match command {
         AocCommand::Part1(io) => process_input(&io, part1)?,
@@ -37,8 +41,8 @@ pub fn aoc_main<F1, F2, R>(part1: F1, part2: F2) -> anyhow::Result<R> where F1: 
 }
 
 fn process_input<F, R>(io: &IOArgs, processor: F) -> anyhow::Result<R>
-    where
-        F: FnOnce(&str) -> R,
+where
+    F: FnOnce(&str) -> R,
 {
     let content = read_file(io.input_path.clone())?;
     Ok(processor(&content))
