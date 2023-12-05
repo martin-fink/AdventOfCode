@@ -1,9 +1,8 @@
 use anyhow::Context;
 use aoc::aoc_main;
-use rayon::iter::IntoParallelRefIterator;
-use rayon::iter::ParallelIterator;
 use regex::Regex;
 use std::collections::BTreeMap;
+use std::ops::Range;
 
 fn main() -> anyhow::Result<()> {
     let result = aoc_main(part1, part2)??;
@@ -15,45 +14,62 @@ fn main() -> anyhow::Result<()> {
 
 #[derive(Default, Debug)]
 struct SeedToLocationMap {
-    seed_to_soil: BTreeMap<u64, (u64, u64)>,
-    soil_to_fertilizer: BTreeMap<u64, (u64, u64)>,
-    fertilizer_to_water: BTreeMap<u64, (u64, u64)>,
-    water_to_light: BTreeMap<u64, (u64, u64)>,
-    light_to_temp: BTreeMap<u64, (u64, u64)>,
-    temp_to_humidity: BTreeMap<u64, (u64, u64)>,
-    humidity_to_location: BTreeMap<u64, (u64, u64)>,
+    maps: Vec<BTreeMap<u64, (u64, u64)>>,
 }
 
 impl SeedToLocationMap {
-    fn get(&self, seed: u64) -> u64 {
-        let soil = Self::get_for_or_self(&self.seed_to_soil, seed);
-        let fertilizer = Self::get_for_or_self(&self.soil_to_fertilizer, soil);
-        let water = Self::get_for_or_self(&self.fertilizer_to_water, fertilizer);
-        let light = Self::get_for_or_self(&self.water_to_light, water);
-        let temp = Self::get_for_or_self(&self.light_to_temp, light);
-        let humidity = Self::get_for_or_self(&self.temp_to_humidity, temp);
-
-        Self::get_for_or_self(&self.humidity_to_location, humidity)
-    }
-
-    fn get_for_or_self(map: &BTreeMap<u64, (u64, u64)>, index: u64) -> u64 {
-        Self::get_for(map, index).unwrap_or(index)
-    }
-
-    fn get_for(map: &BTreeMap<u64, (u64, u64)>, index: u64) -> Option<u64> {
-        if let Some((to, range)) = map.get(&index) {
-            assert_ne!(*range, 0);
-            return Some(*to);
+    fn get(&self, val: Range<u64>) -> u64 {
+        let mut worklist = vec![val];
+        for map in &self.maps {
+            let mut tmp = Vec::new();
+            for item in worklist {
+                tmp.extend(Self::get_for_range(map, item));
+            }
+            worklist = tmp;
         }
 
-        let (from, (to, range)) = map.range(..index).next_back()?;
+        worklist.iter().map(|r| r.start).min().unwrap()
+    }
 
-        if index < from + range {
-            let diff = index - from;
-            Some(to + diff)
-        } else {
-            None
+    fn get_for_range(map: &BTreeMap<u64, (u64, u64)>, mut index: Range<u64>) -> Vec<Range<u64>> {
+        let mut worklist = Vec::new();
+
+        // first check whatever is overhanging to the left
+        if let Some((lower, (to, len))) = map.range(..index.start).next_back()
+        /*Self::last_back(map, index.start, index.end)*/
+        {
+            let n_overlapping = u64::min(
+                index.end - index.start,
+                lower.saturating_add(*len).saturating_sub(index.start),
+            );
+            assert!(*len >= n_overlapping);
+            let diff = index.start - *lower;
+
+            let new_range = to + diff..to + diff + n_overlapping;
+
+            if !new_range.is_empty() {
+                worklist.push(new_range);
+            }
+            index.start += n_overlapping;
         }
+
+        let range = map.range(index.clone());
+        for (upper, (to, len)) in range {
+            if *upper != index.start {
+                assert!(*upper > index.start);
+                let n_not_overlapping = u64::min(*upper - index.start, index.end - index.start);
+                worklist.push(index.start..index.start + n_not_overlapping);
+                index.start = *upper;
+            }
+            let n_overlapping = u64::min(*len, index.end - index.start);
+            worklist.push(*to..to + n_overlapping);
+            index.start += n_overlapping;
+        }
+        if !index.is_empty() {
+            worklist.push(index);
+        }
+
+        worklist
     }
 }
 
@@ -63,13 +79,11 @@ fn parse_input(s: &str) -> anyhow::Result<(Vec<u64>, SeedToLocationMap)> {
     let matches = regex.captures(s).context("unable to match regex")?;
 
     let map = SeedToLocationMap {
-        seed_to_soil: parse_map(matches.get(2).context("unable to get capture")?.as_str()),
-        soil_to_fertilizer: parse_map(matches.get(3).context("unable to get capture")?.as_str()),
-        fertilizer_to_water: parse_map(matches.get(4).context("unable to get capture")?.as_str()),
-        water_to_light: parse_map(matches.get(5).context("unable to get capture")?.as_str()),
-        light_to_temp: parse_map(matches.get(6).context("unable to get capture")?.as_str()),
-        temp_to_humidity: parse_map(matches.get(7).context("unable to get capture")?.as_str()),
-        humidity_to_location: parse_map(matches.get(8).context("unable to get capture")?.as_str()),
+        maps: matches
+            .iter()
+            .skip(2)
+            .map(|m| parse_map(m.unwrap().as_str()))
+            .collect(),
     };
 
     let seeds = matches
@@ -89,7 +103,7 @@ fn part1(s: &str) -> anyhow::Result<u64> {
 
     let min = seeds
         .iter()
-        .map(|seed| map.get(*seed))
+        .map(|seed| map.get(*seed..*seed + 1))
         .min()
         .context("unable to find min")?;
 
@@ -128,21 +142,15 @@ fn part2(s: &str) -> anyhow::Result<u64> {
         let start = seeds[index];
         let len = seeds[index + 1];
 
-        for i in 0..len {
-            all_seeds.push(start + i);
-        }
+        all_seeds.push(start..start + len);
     }
 
-    let all = all_seeds.len();
-    eprintln!("looking for {all} seeds");
-
     let min = all_seeds
-        .par_iter()
-        .map(|seed| map.get(*seed))
+        .iter()
+        .cloned()
+        .map(|seed| map.get(seed))
         .min()
         .context("unable to find min")?;
-
-    eprintln!();
 
     Ok(min)
 }

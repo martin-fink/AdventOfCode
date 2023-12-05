@@ -9,4 +9,3 @@ edition = "2021"
 aoc = { path = "../aoc" }
 anyhow = "1.0.75"
 regex = "1.10.2"
-rayon = "1.8.0"
