@@ -36,7 +36,6 @@ impl SeedToLocationMap {
 
         // first check whatever is overhanging to the left
         if let Some((lower, (to, len))) = map.range(..index.start).next_back()
-        /*Self::last_back(map, index.start, index.end)*/
         {
             let n_overlapping = u64::min(
                 index.end - index.start,
