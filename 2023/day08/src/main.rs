@@ -1,26 +1,23 @@
-use anyhow::{Context, Result};
 use std::fs::File;
 use std::hint::{black_box, unreachable_unchecked};
 use std::io::Read;
 use std::mem::MaybeUninit;
 
-fn main() -> Result<()> {
+fn main() {
     let path = std::env::args().nth(2).unwrap();
 
     let file = File::open(path).unwrap();
     let mut buf_reader = std::io::BufReader::new(file);
     let mut content = String::new();
-    buf_reader.read_to_string(&mut content)?;
+    buf_reader.read_to_string(&mut content).unwrap();
 
     let result = if std::env::args().nth(1).unwrap() == "part1" {
         black_box(part1(&content))
     } else {
         black_box(part2(&content))
-    }?;
+    };
 
     println!("{result}");
-
-    Ok(())
 }
 
 // 26^3 = 17576
@@ -58,10 +55,10 @@ fn shortest_path(directions: &str, maps: &PathMap, start: &str) -> usize {
     steps
 }
 
-fn parse_input(s: &str) -> Result<(&str, Vec<&str>, Box<PathMap>)> {
+fn parse_input(s: &str) -> (&str, Vec<&str>, Box<PathMap>) {
     let mut lines = s.lines();
 
-    let directions = lines.next().context("no first line")?;
+    let directions = lines.next().unwrap();
 
     let mut beginnings = Vec::new();
     let mut maps = Box::new([MaybeUninit::uninit(); 32 * 32 * 32]);
@@ -73,24 +70,62 @@ fn parse_input(s: &str) -> Result<(&str, Vec<&str>, Box<PathMap>)> {
         }
     });
 
-    Ok((directions, beginnings, maps))
+    (directions, beginnings, maps)
 }
 
 #[inline]
-fn part1(s: &str) -> Result<usize> {
-    let (directions, _, maps) = parse_input(s)?;
+fn part1(s: &str) -> usize {
+    let (directions, _, maps) = parse_input(s);
 
-    Ok(shortest_path(directions, &maps, "AAA"))
+    shortest_path(directions, &maps, "AAA")
 }
 
 #[inline]
-fn part2(s: &str) -> Result<usize> {
-    let (directions, beginnings, maps) = parse_input(s)?;
+fn part2(s: &str) -> usize {
+    let (directions, beginnings, maps) = parse_input(s);
 
     let steps = beginnings
         .iter()
         .map(|k| shortest_path(directions, &maps, k))
-        .fold(1, num::integer::lcm);
+        .fold(1, lcm);
 
-    Ok(steps)
+    steps
+}
+
+#[inline]
+fn lcm(a: usize, other: usize) -> usize {
+    if a == 0 && other == 0 {
+        return 0;
+    }
+    let gcd = gcd(a, other);
+    
+    a * (other / gcd)
+}
+
+#[inline]
+fn gcd(a: usize, other: usize) -> usize {
+    // Use Stein's algorithm
+    let mut m = a;
+    let mut n = other;
+    if m == 0 || n == 0 {
+        return m | n;
+    }
+
+    // find common factors of 2
+    let shift = (m | n).trailing_zeros();
+
+    // divide n and m by 2 until odd
+    m >>= m.trailing_zeros();
+    n >>= n.trailing_zeros();
+
+    while m != n {
+        if m > n {
+            m -= n;
+            m >>= m.trailing_zeros();
+        } else {
+            n -= m;
+            n >>= n.trailing_zeros();
+        }
+    }
+    m << shift
 }
