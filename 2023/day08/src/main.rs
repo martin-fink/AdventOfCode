@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use aoc::aoc_main;
 use regex::Regex;
 use std::collections::HashMap;
+use std::hint::unreachable_unchecked;
 
 fn main() -> Result<()> {
     let result = aoc_main(part1, part2)??;
@@ -31,10 +32,6 @@ impl TryFrom<char> for Direction {
     }
 }
 
-fn parse_directions(s: &str) -> Vec<Direction> {
-    s.chars().flat_map(|c| c.try_into()).collect()
-}
-
 fn parse_line(s: &str) -> Result<(&str, (&str, &str))> {
     let regex = Regex::new("(.+) = \\((.+), (.+)\\)")?;
 
@@ -49,19 +46,16 @@ fn parse_line(s: &str) -> Result<(&str, (&str, &str))> {
     ))
 }
 
-fn shortest_path(
-    directions: &[Direction],
-    maps: &PathMap,
-    start: &str,
-) -> usize {
+fn shortest_path(directions: &str, maps: &PathMap, start: &str) -> usize {
     let mut steps = 0usize;
     let mut current = start;
 
-    while !current.ends_with('Z') {
+    while current.as_bytes()[2] as char != 'Z' {
         let instruction = maps.get(current).unwrap();
-        current = match directions[steps % directions.len()] {
-            Direction::L => instruction.0,
-            Direction::R => instruction.1,
+        current = match directions.as_bytes()[steps % directions.len()] as char {
+            'L' => instruction.0,
+            'R' => instruction.1,
+            _ => unsafe { unreachable_unchecked() },
         };
 
         steps += 1;
@@ -70,11 +64,10 @@ fn shortest_path(
     steps
 }
 
-
-fn parse_input(s: &str) -> Result<(Vec<Direction>, PathMap)> {
+fn parse_input(s: &str) -> Result<(&str, PathMap)> {
     let mut lines = s.lines();
 
-    let directions = parse_directions(lines.next().context("no first line")?);
+    let directions = lines.next().context("no first line")?;
 
     let maps = lines
         .skip(1)
@@ -87,7 +80,7 @@ fn parse_input(s: &str) -> Result<(Vec<Direction>, PathMap)> {
 fn part1(s: &str) -> Result<usize> {
     let (directions, maps) = parse_input(s)?;
 
-    Ok(shortest_path(&directions, &maps, "AAA"))
+    Ok(shortest_path(directions, &maps, "AAA"))
 }
 
 fn part2(s: &str) -> Result<usize> {
@@ -96,7 +89,7 @@ fn part2(s: &str) -> Result<usize> {
     let steps = maps
         .keys()
         .filter(|k| k.ends_with('A'))
-        .map(|current| shortest_path(&directions, &maps, current))
+        .map(|current| shortest_path(directions, &maps, current))
         .fold(1, num::integer::lcm);
 
     Ok(steps)
