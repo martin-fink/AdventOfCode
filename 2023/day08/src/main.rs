@@ -35,6 +35,7 @@ fn hash_letters_str(letters: &str) -> usize {
         | ((bytes[2] - 0x41) as usize)
 }
 
+#[inline]
 fn parse_line(s: &str) -> (&str, (&str, &str)) {
     (&s[0..3], (&s[7..10], &s[12..15]))
 }
@@ -78,12 +79,14 @@ fn parse_input(s: &str) -> Result<(&str, Vec<&str>, Box<PathMap>)> {
     Ok((directions, beginnings, maps))
 }
 
+#[inline]
 fn part1(s: &str) -> Result<usize> {
     let (directions, _, maps) = parse_input(s)?;
 
     Ok(shortest_path(directions, &maps, "AAA"))
 }
 
+#[inline]
 fn part2(s: &str) -> Result<usize> {
     let (directions, beginnings, maps) = parse_input(s)?;
 
