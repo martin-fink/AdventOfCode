@@ -24,14 +24,14 @@ fn main() -> Result<()> {
 }
 
 // 26^3 = 17576
-type PathMap<'a> = [MaybeUninit<(&'a str, &'a str)>; 262144];
+type PathMap<'a> = [MaybeUninit<(&'a str, &'a str)>; 32*32*32];
 
 #[inline]
 fn hash_letters_str(letters: &str) -> usize {
     debug_assert!(letters.len() == 3);
     let bytes = letters.as_bytes();
-    (((bytes[0] - 0x41) as usize) << 12)
-        | (((bytes[1] - 0x41) as usize) << 6)
+    (((bytes[0] - 0x41) as usize) * 32 * 32)
+        | (((bytes[1] - 0x41) as usize) * 32)
         | ((bytes[2] - 0x41) as usize)
 }
 
@@ -63,7 +63,7 @@ fn parse_input(s: &str) -> Result<(&str, Vec<&str>, Box<PathMap>)> {
     let directions = lines.next().context("no first line")?;
 
     let mut beginnings = Vec::new();
-    let mut maps = Box::new([MaybeUninit::uninit(); 262144]);
+    let mut maps = Box::new([MaybeUninit::uninit(); 32*32*32]);
 
     lines
         .skip(1)
