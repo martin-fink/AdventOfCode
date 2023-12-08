@@ -1,10 +1,27 @@
+use rayon::iter::ParallelIterator;
+use std::fs::File;
 use anyhow::{Context, Result};
-use aoc::aoc_main;
-use std::hint::unreachable_unchecked;
+use std::hint::{black_box, unreachable_unchecked};
+use std::io::Read;
 use std::mem::MaybeUninit;
+use rayon::prelude::IntoParallelRefIterator;
 
 fn main() -> Result<()> {
-    let result = aoc_main(part1, part2)??;
+    let path = std::env::args().skip(2).next().unwrap();
+
+    let file = File::open(&path).unwrap();
+    let mut buf_reader = std::io::BufReader::new(file);
+    let mut content = String::new();
+    buf_reader.read_to_string(&mut content)?;
+
+    let mut result = 0;
+    // for _ in 0..1000 {
+        result = if std::env::args().skip(1).next().unwrap() == "part1" {
+            black_box(part1(&content))
+        } else {
+            black_box(part2(&content))
+        }?;
+    // }
 
     println!("{result}");
 
@@ -94,9 +111,12 @@ fn part2(s: &str) -> Result<usize> {
     let (directions, beginnings, maps) = parse_input(s)?;
 
     let steps = beginnings
+        .par_iter()
+        // .iter()
+        .filter_map(|k| if k.as_bytes()[2] as char == 'A' { Some(shortest_path(directions, &maps, k)) } else { None })
+        .collect::<Vec<_>>()
         .iter()
-        .filter(|k| k.ends_with('A'))
-        .map(|current| shortest_path(directions, &maps, current))
+        .cloned()
         .fold(1, num::integer::lcm);
 
     Ok(steps)

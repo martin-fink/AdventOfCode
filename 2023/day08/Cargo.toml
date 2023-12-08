@@ -10,4 +10,5 @@ aoc = { path = "../aoc" }
 anyhow = "1.0.75"
 itertools = "0.12.0"
 num = "0.4.1"
+rayon = "1.8.0"
 
