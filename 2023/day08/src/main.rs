@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::hint::{black_box, unreachable_unchecked};
+use std::hint::unreachable_unchecked;
 use std::io::Read;
 use std::mem::MaybeUninit;
 
@@ -12,9 +12,9 @@ fn main() {
     buf_reader.read_to_string(&mut content).unwrap();
 
     let result = if std::env::args().nth(1).unwrap() == "part1" {
-        black_box(part1(&content))
+        part1(&content)
     } else {
-        black_box(part2(&content))
+        part2(&content)
     };
 
     println!("{result}");
