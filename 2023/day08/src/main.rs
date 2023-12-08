@@ -23,12 +23,6 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug, Copy, Clone)]
-enum Direction {
-    L,
-    R,
-}
-
 // 26^3 = 17576
 type PathMap<'a> = [MaybeUninit<(&'a str, &'a str)>; 262144];
 
@@ -39,18 +33,6 @@ fn hash_letters_str(letters: &str) -> usize {
     (((bytes[0] - 0x41) as usize) << 12)
         | (((bytes[1] - 0x41) as usize) << 6)
         | ((bytes[2] - 0x41) as usize)
-}
-
-impl TryFrom<char> for Direction {
-    type Error = ();
-
-    fn try_from(value: char) -> std::result::Result<Self, Self::Error> {
-        match value {
-            'L' => Ok(Self::L),
-            'R' => Ok(Self::R),
-            _ => Err(()),
-        }
-    }
 }
 
 fn parse_line(s: &str) -> (&str, (&str, &str)) {
