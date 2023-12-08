@@ -74,26 +74,26 @@ fn parse_input(s: &str) -> (&str, Vec<&str>, Box<PathMap>) {
 }
 
 #[inline]
-fn part1(s: &str) -> usize {
+fn part1(s: &str) -> u32 {
     let (directions, _, maps) = parse_input(s);
 
-    shortest_path(directions, &maps, "AAA")
+    shortest_path(directions, &maps, "AAA") as u32
 }
 
 #[inline]
-fn part2(s: &str) -> usize {
+fn part2(s: &str) -> u32 {
     let (directions, beginnings, maps) = parse_input(s);
 
     let steps = beginnings
         .iter()
-        .map(|k| shortest_path(directions, &maps, k))
+        .map(|k| shortest_path(directions, &maps, k) as u32)
         .fold(1, lcm);
 
     steps
 }
 
 #[inline]
-fn lcm(a: usize, other: usize) -> usize {
+fn lcm(a: u32, other: u32) -> u32 {
     if a == 0 && other == 0 {
         return 0;
     }
@@ -103,7 +103,7 @@ fn lcm(a: usize, other: usize) -> usize {
 }
 
 #[inline]
-fn gcd(a: usize, other: usize) -> usize {
+fn gcd(a: u32, other: u32) -> u32 {
     // Use Stein's algorithm
     let mut m = a;
     let mut n = other;
