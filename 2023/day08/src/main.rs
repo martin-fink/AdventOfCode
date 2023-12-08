@@ -1,27 +1,22 @@
-use rayon::iter::ParallelIterator;
-use std::fs::File;
 use anyhow::{Context, Result};
+use std::fs::File;
 use std::hint::{black_box, unreachable_unchecked};
 use std::io::Read;
 use std::mem::MaybeUninit;
-use rayon::prelude::IntoParallelRefIterator;
 
 fn main() -> Result<()> {
-    let path = std::env::args().skip(2).next().unwrap();
+    let path = std::env::args().nth(2).unwrap();
 
-    let file = File::open(&path).unwrap();
+    let file = File::open(path).unwrap();
     let mut buf_reader = std::io::BufReader::new(file);
     let mut content = String::new();
     buf_reader.read_to_string(&mut content)?;
 
-    let mut result = 0;
-    // for _ in 0..1000 {
-        result = if std::env::args().skip(1).next().unwrap() == "part1" {
-            black_box(part1(&content))
-        } else {
-            black_box(part2(&content))
-        }?;
-    // }
+    let result = if std::env::args().nth(1).unwrap() == "part1" {
+        black_box(part1(&content))
+    } else {
+        black_box(part2(&content))
+    }?;
 
     println!("{result}");
 
@@ -90,7 +85,7 @@ fn parse_input(s: &str) -> Result<(&str, Vec<&str>, Box<PathMap>)> {
 
     lines
         .skip(1)
-        .map(|line| parse_line(line))
+        .map(parse_line)
         .for_each(|(k, v)| {
             maps[hash_letters_str(k)] = MaybeUninit::new(v);
             if k.as_bytes()[2] as char == 'A' {
@@ -111,12 +106,14 @@ fn part2(s: &str) -> Result<usize> {
     let (directions, beginnings, maps) = parse_input(s)?;
 
     let steps = beginnings
-        .par_iter()
-        // .iter()
-        .filter_map(|k| if k.as_bytes()[2] as char == 'A' { Some(shortest_path(directions, &maps, k)) } else { None })
-        .collect::<Vec<_>>()
         .iter()
-        .cloned()
+        .filter_map(|k| {
+            if k.as_bytes()[2] as char == 'A' {
+                Some(shortest_path(directions, &maps, k))
+            } else {
+                None
+            }
+        })
         .fold(1, num::integer::lcm);
 
     Ok(steps)
