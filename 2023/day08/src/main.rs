@@ -24,7 +24,7 @@ fn main() -> Result<()> {
 }
 
 // 26^3 = 17576
-type PathMap<'a> = [MaybeUninit<(&'a str, &'a str)>; 32*32*32];
+type PathMap<'a> = [MaybeUninit<(&'a str, &'a str)>; 32 * 32 * 32];
 
 #[inline]
 fn hash_letters_str(letters: &str) -> usize {
@@ -64,17 +64,14 @@ fn parse_input(s: &str) -> Result<(&str, Vec<&str>, Box<PathMap>)> {
     let directions = lines.next().context("no first line")?;
 
     let mut beginnings = Vec::new();
-    let mut maps = Box::new([MaybeUninit::uninit(); 32*32*32]);
+    let mut maps = Box::new([MaybeUninit::uninit(); 32 * 32 * 32]);
 
-    lines
-        .skip(1)
-        .map(parse_line)
-        .for_each(|(k, v)| {
-            maps[hash_letters_str(k)] = MaybeUninit::new(v);
-            if k.as_bytes()[2] as char == 'A' {
-                beginnings.push(k);
-            }
-        });
+    lines.skip(1).map(parse_line).for_each(|(k, v)| {
+        maps[hash_letters_str(k)] = MaybeUninit::new(v);
+        if k.as_bytes()[2] as char == 'A' {
+            beginnings.push(k);
+        }
+    });
 
     Ok((directions, beginnings, maps))
 }
@@ -92,13 +89,7 @@ fn part2(s: &str) -> Result<usize> {
 
     let steps = beginnings
         .iter()
-        .filter_map(|k| {
-            if k.as_bytes()[2] as char == 'A' {
-                Some(shortest_path(directions, &maps, k))
-            } else {
-                None
-            }
-        })
+        .map(|k| shortest_path(directions, &maps, k))
         .fold(1, num::integer::lcm);
 
     Ok(steps)
