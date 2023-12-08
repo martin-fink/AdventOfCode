@@ -8,7 +8,6 @@ edition = "2021"
 [dependencies]
 aoc = { path = "../aoc" }
 anyhow = "1.0.75"
-regex = "1.10.2"
 itertools = "0.12.0"
 num = "0.4.1"
 

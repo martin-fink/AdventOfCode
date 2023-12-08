@@ -1,6 +1,5 @@
 use anyhow::{Context, Result};
 use aoc::aoc_main;
-use regex::Regex;
 use std::hint::unreachable_unchecked;
 use std::mem::MaybeUninit;
 
