@@ -1,6 +1,5 @@
 use anyhow::{Context, Result};
 use aoc::aoc_main;
-use regex::Regex;
 use std::collections::HashMap;
 
 fn main() -> Result<()> {
@@ -35,18 +34,9 @@ fn parse_directions(s: &str) -> Vec<Direction> {
     s.chars().flat_map(|c| c.try_into()).collect()
 }
 
-fn parse_line(s: &str) -> Result<(&str, (&str, &str))> {
-    let regex = Regex::new("(.+) = \\((.+), (.+)\\)")?;
-
-    let captures = regex.captures(s).context("no captures")?;
-
-    Ok((
-        captures.get(1).unwrap().as_str(),
-        (
-            captures.get(2).unwrap().as_str(),
-            captures.get(3).unwrap().as_str(),
-        ),
-    ))
+#[inline]
+fn parse_line(s: &str) -> (&str, (&str, &str)) {
+    (&s[0..3], (&s[7..10], &s[12..15]))
 }
 
 fn shortest_path(
@@ -78,7 +68,7 @@ fn parse_input(s: &str) -> Result<(Vec<Direction>, PathMap)> {
 
     let maps = lines
         .skip(1)
-        .flat_map(|line| parse_line(line))
+        .map(|line| parse_line(line))
         .collect::<PathMap>();
 
     Ok((directions, maps))
