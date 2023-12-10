@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.75"
 aoc = { path = "../aoc" }
+
+[profile.release]
+lto = true
