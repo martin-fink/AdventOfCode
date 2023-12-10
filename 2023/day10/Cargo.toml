@@ -9,4 +9,3 @@ edition = "2021"
 anyhow = "1.0.75"
 aoc = { path = "../aoc" }
 colored = "2.1.0"
-

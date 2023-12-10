@@ -24,33 +24,31 @@ enum GridElement {
     Start,
 }
 
-struct Grid {
-    elems: Vec<Vec<GridElement>>,
+struct Grid<'a> {
+    elems: Vec<&'a str>,
     start: Pos,
 }
 
 type Pos = (usize, usize);
 
-impl Display for Grid {
+impl<'a> Display for Grid<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for row in &self.elems {
-            for item in row {
-                write!(f, "{}", item)?;
-            }
-            writeln!(f)?;
+            writeln!(f, "{}", row)?;
         }
         Ok(())
     }
 }
 
-impl Grid {
-    fn new(elems: Vec<Vec<GridElement>>) -> Result<Self> {
+impl<'a> Grid<'a> {
+    fn new(elems: Vec<&'a str>) -> Result<Self> {
         let start = Self::get_start(&elems)?;
         Ok(Self { elems, start })
     }
 
+    #[inline]
     fn get(&self, pos: Pos) -> GridElement {
-        self.elems[pos.0][pos.1]
+        GridElement::try_from(self.elems[pos.0].as_bytes()[pos.1] as char).unwrap()
     }
 
     fn get_connecting_points(&self, pos: Pos) -> Option<(Pos, Pos)> {
@@ -127,15 +125,15 @@ impl Grid {
         }
     }
 
-    fn get_start(elems: &[Vec<GridElement>]) -> Result<Pos> {
+    fn get_start(elems: &[&str]) -> Result<Pos> {
         elems
             .iter()
             .enumerate()
             .filter_map(|(x, grid)| {
-                grid.iter()
+                grid.bytes()
                     .enumerate()
                     .filter_map(|(y, elem)| {
-                        if *elem == GridElement::Start {
+                        if elem as char == 'S' {
                             Some((x, y))
                         } else {
                             None
@@ -212,11 +210,7 @@ impl Display for GridElement {
 }
 
 fn parse_input(s: &str) -> Result<Grid> {
-    Grid::new(
-        s.lines()
-            .map(|line| line.chars().flat_map(GridElement::try_from).collect())
-            .collect(),
-    )
+    Grid::new(s.lines().collect())
 }
 
 fn part1(s: &str) -> Result<usize> {
@@ -234,7 +228,7 @@ fn part2(s: &str) -> Result<usize> {
     let mut area = 0;
     for (x, row) in grid.elems.iter().enumerate() {
         let mut in_grid = false;
-        for (y, elem) in row.iter().enumerate() {
+        for (y, elem) in row.bytes().enumerate() {
             if l.get(&(x, y)).is_some() {
                 let moves_down = x > 0 && l.get(&(x - 1, y)).is_some();
                 if moves_down {
@@ -243,12 +237,15 @@ fn part2(s: &str) -> Result<usize> {
                         in_grid = !in_grid;
                     }
                 }
-                print!("{}", format!("{}", elem).green())
+                print!(
+                    "{}",
+                    format!("{}", GridElement::try_from(elem as char).unwrap()).green()
+                )
             } else if in_grid {
                 area += 1;
                 print!("{}", "▒".blue());
             } else {
-                print!("{}", elem);
+                print!("{}", GridElement::try_from(elem as char).unwrap());
             }
         }
         println!()
