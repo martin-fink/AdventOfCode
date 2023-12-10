@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use aoc::aoc_main;
 use colored::Colorize;
-use std::collections::{HashSet, VecDeque};
+use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
 
 fn main() -> anyhow::Result<()> {
@@ -26,6 +26,7 @@ enum GridElement {
 
 struct Grid {
     elems: Vec<Vec<GridElement>>,
+    start: Pos,
 }
 
 type Pos = (usize, usize);
@@ -43,6 +44,11 @@ impl Display for Grid {
 }
 
 impl Grid {
+    fn new(elems: Vec<Vec<GridElement>>) -> Result<Self> {
+        let start = Self::get_start(&elems)?;
+        Ok(Self { elems, start })
+    }
+
     fn get(&self, pos: Pos) -> GridElement {
         self.elems[pos.0][pos.1]
     }
@@ -120,6 +126,55 @@ impl Grid {
             }
         }
     }
+
+    fn get_start(elems: &[Vec<GridElement>]) -> Result<Pos> {
+        elems
+            .iter()
+            .enumerate()
+            .filter_map(|(x, grid)| {
+                grid.iter()
+                    .enumerate()
+                    .filter_map(|(y, elem)| {
+                        if *elem == GridElement::Start {
+                            Some((x, y))
+                        } else {
+                            None
+                        }
+                    })
+                    .next()
+            })
+            .next()
+            .context("could not find start pos")
+    }
+
+    fn get_loop(&self) -> HashSet<Pos> {
+        let mut path = HashSet::new();
+
+        let mut prev = None;
+        let mut current = self.start;
+        loop {
+            if !path.insert(current) {
+                // we are now at the start
+                assert_eq!(current, self.start);
+                break;
+            }
+
+            let (n1, n2) = self
+                .get_connecting_points(current)
+                .expect("we should not be looking at ground");
+            let prev_tmp = Some(current);
+            if Some(n1) != prev {
+                current = n1;
+            } else if Some(n2) != prev {
+                current = n2;
+            } else {
+                unreachable!();
+            }
+            prev = prev_tmp;
+        }
+
+        path
+    }
 }
 
 impl TryFrom<char> for GridElement {
@@ -156,92 +211,32 @@ impl Display for GridElement {
     }
 }
 
-fn parse_input(s: &str) -> Grid {
-    Grid {
-        elems: s
-            .lines()
+fn parse_input(s: &str) -> Result<Grid> {
+    Grid::new(
+        s.lines()
             .map(|line| line.chars().flat_map(GridElement::try_from).collect())
             .collect(),
-    }
+    )
 }
 
-fn get_farthest_point(grid: Grid, start: Pos) -> u32 {
-    let mut seen = HashSet::new();
-
-    let mut worklist = VecDeque::new();
-    worklist.push_back((start, 0));
-    let mut max = 0;
-
-    while let Some((elem, distance)) = worklist.pop_front() {
-        if !seen.insert(elem) {
-            continue;
-        }
-
-        max = u32::max(distance, max);
-        let (n1, n2) = grid
-            .get_connecting_points(elem)
-            .expect("we should not be looking at ground");
-        worklist.push_back((n1, distance + 1));
-        worklist.push_back((n2, distance + 1));
-    }
-
-    max
-}
-
-fn get_start(grid: &Grid) -> Result<Pos> {
-    grid.elems
-        .iter()
-        .enumerate()
-        .filter_map(|(x, grid)| {
-            grid.iter()
-                .enumerate()
-                .filter_map(|(y, elem)| {
-                    if *elem == GridElement::Start {
-                        Some((x, y))
-                    } else {
-                        None
-                    }
-                })
-                .next()
-        })
-        .next()
-        .context("could not find start pos")
-}
-
-fn part1(s: &str) -> Result<u32> {
-    let grid = parse_input(s);
+fn part1(s: &str) -> Result<usize> {
+    let grid = parse_input(s)?;
     println!("{grid}");
 
-    let start = get_start(&grid)?;
-    Ok(get_farthest_point(grid, start))
+    Ok(grid.get_loop().len() / 2)
 }
 
-fn part2(s: &str) -> Result<u32> {
-    let grid = parse_input(s);
+fn part2(s: &str) -> Result<usize> {
+    let grid = parse_input(s)?;
 
-    let start = get_start(&grid)?;
-
-    let mut seen = HashSet::new();
-    let mut worklist = VecDeque::new();
-    worklist.push_back(start);
-    while let Some(elem) = worklist.pop_front() {
-        if !seen.insert(elem) {
-            continue;
-        }
-
-        let (n1, n2) = grid
-            .get_connecting_points(elem)
-            .context("we should not be looking at ground")?;
-        worklist.push_back(n1);
-        worklist.push_back(n2);
-    }
+    let l = grid.get_loop();
 
     let mut area = 0;
     for (x, row) in grid.elems.iter().enumerate() {
         let mut in_grid = false;
         for (y, elem) in row.iter().enumerate() {
-            if seen.get(&(x, y)).is_some() {
-                let moves_down = x > 0 && seen.get(&(x - 1, y)).is_some();
+            if l.get(&(x, y)).is_some() {
+                let moves_down = x > 0 && l.get(&(x - 1, y)).is_some();
                 if moves_down {
                     let (n1, n2) = grid.get_connecting_points((x - 1, y)).unwrap();
                     if n1 == (x, y) || n2 == (x, y) {
