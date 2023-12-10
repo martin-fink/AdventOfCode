@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use aoc::aoc_main;
-use std::collections::HashSet;
+use std::alloc;
+use std::alloc::Layout;
 use std::fmt::{Display, Formatter};
 
 fn main() -> anyhow::Result<()> {
@@ -140,17 +141,19 @@ impl<'a> Grid<'a> {
             .context("could not find start pos")
     }
 
-    fn get_loop(&self) -> HashSet<Pos> {
-        let mut path = HashSet::new();
+    fn get_loop(&self) -> Box<[bool]> {
+        let mut path = alloc_box_buffer(self.input.len());
 
         let mut prev = None;
         let mut current = self.start;
         loop {
-            if !path.insert(current) {
+            let index = current.0 * self.width + current.1;
+            if path[index] {
                 // we are now at the start
-                assert_eq!(current, self.start);
+                debug_assert_eq!(current, self.start);
                 break;
             }
+            path[index] = true;
 
             let (n1, n2) = self
                 .get_connecting_points(current)
@@ -168,6 +171,14 @@ impl<'a> Grid<'a> {
 
         path
     }
+}
+
+fn alloc_box_buffer(len: usize) -> Box<[bool]> {
+    debug_assert_ne!(len, 0);
+    let layout = Layout::array::<bool>(len * std::mem::size_of::<bool>()).unwrap();
+    let ptr = unsafe { alloc::alloc_zeroed(layout) }.cast();
+    let slice_ptr = core::ptr::slice_from_raw_parts_mut(ptr, len);
+    unsafe { Box::from_raw(slice_ptr) }
 }
 
 impl From<char> for GridElement {
@@ -227,8 +238,8 @@ fn part2(s: &str) -> Result<usize> {
     for x in 0..(grid.input.len() + 1) / grid.width {
         let mut in_grid = false;
         for y in 0..(grid.width - 1) {
-            if l.get(&(x, y)).is_some() {
-                let moves_down = x > 0 && l.get(&(x - 1, y)).is_some();
+            if l[x * grid.width + y] {
+                let moves_down = x > 0 && l[(x - 1) * grid.width + y];
                 if moves_down {
                     let (n1, n2) = grid.get_connecting_points((x - 1, y)).unwrap();
                     if n1 == (x, y) || n2 == (x, y) {
