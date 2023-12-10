@@ -1,11 +1,24 @@
 use anyhow::{Context, Result};
-use aoc::aoc_main;
 use std::alloc;
 use std::alloc::Layout;
 use std::fmt::{Display, Formatter};
+use std::fs::File;
+use std::io::Read;
 
-fn main() -> anyhow::Result<()> {
-    let result = aoc_main(part1, part2)??;
+fn read_file(path: &str) -> Result<String> {
+    let mut file = File::open(path).with_context(|| format!("Failed to open {}", path))?;
+    let mut content = String::new();
+    file.read_to_string(&mut content)?;
+    Ok(content)
+}
+
+fn main() -> Result<()> {
+    let mut args = std::env::args().skip(1);
+    let p1 = args.next().context("Usage: ./program part1|part2 path")? == "part1";
+    let file = args.next().context("Usage: ./program part1|part2 path")?;
+
+    let input = read_file(&file)?;
+    let result = if p1 { part1(&input) } else { part2(&input) }?;
 
     println!("{result}");
 
