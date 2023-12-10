@@ -19,10 +19,10 @@ struct IOArgs {
 }
 
 fn read_file(path: std::path::PathBuf) -> anyhow::Result<String> {
-    let file = File::open(&path).with_context(|| format!("Failed to open {}", path.display()))?;
-    let mut buf_reader = std::io::BufReader::new(file);
+    let mut file =
+        File::open(&path).with_context(|| format!("Failed to open {}", path.display()))?;
     let mut content = String::new();
-    buf_reader.read_to_string(&mut content)?;
+    file.read_to_string(&mut content)?;
     Ok(content)
 }
 
