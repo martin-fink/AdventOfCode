@@ -3,7 +3,9 @@ use std::alloc;
 use std::alloc::Layout;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
+use std::hint::black_box;
 use std::io::Read;
+use std::mem::MaybeUninit;
 
 fn read_file(path: &str) -> Result<String> {
     let mut file = File::open(path).with_context(|| format!("Failed to open {}", path))?;
@@ -18,7 +20,7 @@ fn main() -> Result<()> {
     let file = args.next().context("Usage: ./program part1|part2 path")?;
 
     let input = read_file(&file)?;
-    let result = if p1 { part1(&input) } else { part2(&input) }?;
+    let result = black_box(if p1 { part1(&input) } else { part2(&input) }?);
 
     println!("{result}");
 
@@ -113,28 +115,47 @@ impl<'a> Grid<'a> {
             )),
             GridElement::Start => {
                 // first get all neighbours
-                let mut vec = Vec::with_capacity(8);
-                for x in pos.0.saturating_sub(1)..=usize::min(pos.0 + 1, self.width - 2) {
-                    for y in pos.1.saturating_sub(1)..=usize::min(pos.1 + 1, self.width - 2) {
-                        if x != pos.0 || y != pos.1 {
-                            vec.push((x, y))
-                        }
-                    }
+                let mut neighbours = [MaybeUninit::uninit(); 2];
+                let mut idx = 0;
+
+                if pos.0 > 0
+                    && matches!(
+                        self.get((pos.0 - 1, pos.1)),
+                        GridElement::Vertical | GridElement::LeftTop | GridElement::RightTop
+                    )
+                {
+                    neighbours[idx] = MaybeUninit::new((pos.0 - 1, pos.1));
+                    idx += 1
+                }
+                if pos.1 > 0
+                    && matches!(
+                        self.get((pos.0, pos.1 - 1)),
+                        GridElement::Horizontal | GridElement::LeftTop | GridElement::LeftBot
+                    )
+                {
+                    neighbours[idx] = MaybeUninit::new((pos.0, pos.1 - 1));
+                    idx += 1
+                }
+                let len = (self.input.len() + 1) / self.width;
+                if pos.0 < len
+                    && matches!(
+                        self.get((pos.0 + 1, pos.1)),
+                        GridElement::Vertical | GridElement::RightBot | GridElement::LeftBot
+                    )
+                {
+                    neighbours[idx] = MaybeUninit::new((pos.0 - 2, pos.1));
+                    idx += 1
+                }
+                if pos.1 > self.width
+                    && matches!(
+                        self.get((pos.0, pos.1 + 1)),
+                        GridElement::Horizontal | GridElement::RightTop | GridElement::RightBot
+                    )
+                {
+                    neighbours[idx] = MaybeUninit::new((pos.0, pos.1 - 2));
                 }
 
-                let filtered = vec
-                    .iter()
-                    .filter(|p| {
-                        let Some((n1, n2)) = self.get_connecting_points(**p) else {
-                            return false;
-                        };
-                        n1 == pos || n2 == pos
-                    })
-                    .collect::<Vec<_>>();
-
-                assert_eq!(filtered.len(), 2);
-
-                Some((*filtered[0], *filtered[1]))
+                Some(unsafe { (neighbours[0].assume_init(), neighbours[1].assume_init()) })
             }
         }
     }
