@@ -48,7 +48,7 @@ impl<'a> Grid<'a> {
 
     #[inline]
     fn get(&self, pos: Pos) -> GridElement {
-        GridElement::try_from(self.elems[pos.0].as_bytes()[pos.1] as char).unwrap()
+        GridElement::from(self.elems[pos.0].as_bytes()[pos.1] as char)
     }
 
     fn get_connecting_points(&self, pos: Pos) -> Option<(Pos, Pos)> {
@@ -175,20 +175,18 @@ impl<'a> Grid<'a> {
     }
 }
 
-impl TryFrom<char> for GridElement {
-    type Error = ();
-
-    fn try_from(value: char) -> std::result::Result<Self, Self::Error> {
+impl From<char> for GridElement {
+    fn from(value: char) -> Self {
         match value {
-            '|' => Ok(Self::Vertical),
-            '-' => Ok(Self::Horizontal),
-            'L' => Ok(Self::LeftBot),
-            'J' => Ok(Self::RightBot),
-            '7' => Ok(Self::RightTop),
-            'F' => Ok(Self::LeftTop),
-            '.' => Ok(Self::Ground),
-            'S' => Ok(Self::Start),
-            _ => Err(()),
+            '|' => Self::Vertical,
+            '-' => Self::Horizontal,
+            'L' => Self::LeftBot,
+            'J' => Self::RightBot,
+            '7' => Self::RightTop,
+            'F' => Self::LeftTop,
+            '.' => Self::Ground,
+            'S' => Self::Start,
+            _ => unreachable!(),
         }
     }
 }
