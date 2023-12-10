@@ -1,6 +1,5 @@
 use anyhow::{Context, Result};
 use aoc::aoc_main;
-use colored::Colorize;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
 
@@ -25,7 +24,8 @@ enum GridElement {
 }
 
 struct Grid<'a> {
-    elems: Vec<&'a str>,
+    input: &'a str,
+    width: usize,
     start: Pos,
 }
 
@@ -33,36 +33,38 @@ type Pos = (usize, usize);
 
 impl<'a> Display for Grid<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for row in &self.elems {
-            writeln!(f, "{}", row)?;
-        }
+        writeln!(f, "{}", self.input)?;
         Ok(())
     }
 }
 
 impl<'a> Grid<'a> {
-    fn new(elems: Vec<&'a str>) -> Result<Self> {
-        let start = Self::get_start(&elems)?;
-        Ok(Self { elems, start })
+    fn new(input: &'a str, width: usize) -> Result<Self> {
+        let start = Self::get_start(input, width)?;
+        Ok(Self {
+            input,
+            width,
+            start,
+        })
     }
 
     #[inline]
     fn get(&self, pos: Pos) -> GridElement {
-        GridElement::from(self.elems[pos.0].as_bytes()[pos.1] as char)
+        GridElement::from(self.input.as_bytes()[pos.0 * self.width + pos.1] as char)
     }
 
     fn get_connecting_points(&self, pos: Pos) -> Option<(Pos, Pos)> {
         let elem = self.get(pos);
 
         let checked_add_x = |x, n| {
-            if x + n >= self.elems.len() {
+            if x + n >= self.input.len() {
                 None
             } else {
                 Some(x + n)
             }
         };
         let checked_add_y = |y, n| {
-            if y + n >= self.elems.first()?.len() {
+            if y + n >= self.width - 1 {
                 None
             } else {
                 Some(y + n)
@@ -98,10 +100,8 @@ impl<'a> Grid<'a> {
             GridElement::Start => {
                 // first get all neighbours
                 let mut vec = Vec::with_capacity(8);
-                for x in pos.0.saturating_sub(1)..=usize::min(pos.0 + 1, self.elems.len() - 1) {
-                    for y in
-                        pos.1.saturating_sub(1)..=usize::min(pos.1 + 1, self.elems[x].len() - 1)
-                    {
+                for x in pos.0.saturating_sub(1)..=usize::min(pos.0 + 1, self.width - 2) {
+                    for y in pos.1.saturating_sub(1)..=usize::min(pos.1 + 1, self.width - 2) {
                         if x != pos.0 || y != pos.1 {
                             vec.push((x, y))
                         }
@@ -125,21 +125,16 @@ impl<'a> Grid<'a> {
         }
     }
 
-    fn get_start(elems: &[&str]) -> Result<Pos> {
+    fn get_start(elems: &str, width: usize) -> Result<Pos> {
         elems
-            .iter()
+            .bytes()
             .enumerate()
-            .filter_map(|(x, grid)| {
-                grid.bytes()
-                    .enumerate()
-                    .filter_map(|(y, elem)| {
-                        if elem as char == 'S' {
-                            Some((x, y))
-                        } else {
-                            None
-                        }
-                    })
-                    .next()
+            .filter_map(|(x, elem)| {
+                if elem as char == 'S' {
+                    Some((x / width, x % width))
+                } else {
+                    None
+                }
             })
             .next()
             .context("could not find start pos")
@@ -208,12 +203,17 @@ impl Display for GridElement {
 }
 
 fn parse_input(s: &str) -> Result<Grid> {
-    Grid::new(s.lines().collect())
+    let width = s
+        .bytes()
+        .enumerate()
+        .filter_map(|(i, c)| if c as char == '\n' { Some(i + 1) } else { None })
+        .next()
+        .unwrap();
+    Grid::new(s, width)
 }
 
 fn part1(s: &str) -> Result<usize> {
     let grid = parse_input(s)?;
-    println!("{grid}");
 
     Ok(grid.get_loop().len() / 2)
 }
@@ -224,9 +224,9 @@ fn part2(s: &str) -> Result<usize> {
     let l = grid.get_loop();
 
     let mut area = 0;
-    for (x, row) in grid.elems.iter().enumerate() {
+    for x in 0..(grid.input.len() + 1) / grid.width {
         let mut in_grid = false;
-        for (y, elem) in row.bytes().enumerate() {
+        for y in 0..(grid.width - 1) {
             if l.get(&(x, y)).is_some() {
                 let moves_down = x > 0 && l.get(&(x - 1, y)).is_some();
                 if moves_down {
@@ -235,18 +235,10 @@ fn part2(s: &str) -> Result<usize> {
                         in_grid = !in_grid;
                     }
                 }
-                print!(
-                    "{}",
-                    format!("{}", GridElement::try_from(elem as char).unwrap()).green()
-                )
             } else if in_grid {
                 area += 1;
-                print!("{}", "▒".blue());
-            } else {
-                print!("{}", GridElement::try_from(elem as char).unwrap());
             }
         }
-        println!()
     }
 
     Ok(area)
