@@ -66,7 +66,7 @@ impl<'a> Grid<'a> {
 
     #[inline]
     fn get(&self, pos: Pos) -> GridElement {
-        GridElement::from(self.input.as_bytes()[pos.0 * self.width + pos.1] as char)
+        GridElement::from(unsafe { *self.input.as_bytes().get_unchecked(pos.0 * self.width + pos.1) } as char)
     }
 
     fn get_connecting_points(&self, pos: Pos) -> Option<(Pos, Pos)> {
@@ -182,12 +182,13 @@ impl<'a> Grid<'a> {
         let mut current = self.start;
         loop {
             let index = current.0 * self.width + current.1;
-            if path[index] {
+            let is_path = unsafe { path.get_unchecked_mut(index) };
+            if *is_path {
                 // we are now at the start
                 debug_assert_eq!(current, self.start);
                 break;
             }
-            path[index] = true;
+            *is_path = true;
 
             let (n1, n2) = self
                 .get_connecting_points(current)
