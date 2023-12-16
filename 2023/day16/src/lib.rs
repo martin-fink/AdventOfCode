@@ -31,10 +31,12 @@ fn get_energized_tiles(s: &str, start: (isize, isize), initial_dir: Dir) -> usiz
     let width = s.find('\n').unwrap();
     let height = (s.len() + 1) / (width + 1);
 
-    let mut energized = vec![(false, 0u8); width * height];
+    let mut energized = vec![0u8; width * height];
 
     let mut worklist = Vec::new();
     worklist.push((start, initial_dir));
+
+    let mut tiles = 0;
 
     while let Some(((row, col), dir)) = worklist.pop() {
         if col >= width as isize || row >= height as isize || col < 0 || row < 0 {
@@ -44,12 +46,14 @@ fn get_energized_tiles(s: &str, start: (isize, isize), initial_dir: Dir) -> usiz
         let entry = energized
             .get_mut(row as usize * width + col as usize)
             .unwrap();
-        if entry.1 & dir.bitflag() != 0 {
+        if *entry & dir.bitflag() != 0 {
             continue;
         }
+        if *entry != 0 {
+            tiles += 1;
+        }
 
-        entry.0 = true;
-        entry.1 |= dir.bitflag();
+        *entry |= dir.bitflag();
 
         match s.as_bytes()[row as usize * (width + 1) + col as usize] as char {
             '/' => {
@@ -83,7 +87,7 @@ fn get_energized_tiles(s: &str, start: (isize, isize), initial_dir: Dir) -> usiz
         }
     }
 
-    energized.iter().filter(|b| b.0).count()
+    tiles
 }
 
 pub fn part1(s: &str) -> usize {
