@@ -5,7 +5,17 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "day16"
+path = "src/main.rs"
+
 [dependencies]
 aoc = { path = "../aoc" }
 anyhow = "1.0.75"
 
+[dev-dependencies]
+criterion = "0.5.1"
+
+[[bench]]
+name = "benchmark"
+harness = false
