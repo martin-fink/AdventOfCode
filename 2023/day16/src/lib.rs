@@ -1,8 +1,9 @@
+#[repr(u8)]
 enum Dir {
-    Up,
-    Down,
-    Left,
-    Right,
+    Up = 0b0001,
+    Down = 0b0010,
+    Left = 0b0100,
+    Right = 0b1000,
 }
 
 impl Dir {
@@ -43,9 +44,10 @@ fn get_energized_tiles(s: &str, start: (isize, isize), initial_dir: Dir) -> usiz
             continue;
         }
 
-        let entry = energized
-            .get_mut(row as usize * width + col as usize)
-            .unwrap();
+        let entry = unsafe {
+            energized
+                .get_unchecked_mut(row as usize * width + col as usize)
+        };
         if *entry & dir.bitflag() != 0 {
             continue;
         }
@@ -55,7 +57,7 @@ fn get_energized_tiles(s: &str, start: (isize, isize), initial_dir: Dir) -> usiz
 
         *entry |= dir.bitflag();
 
-        match s.as_bytes()[row as usize * (width + 1) + col as usize] as char {
+        match *unsafe { s.as_bytes().get_unchecked(row as usize * (width + 1) + col as usize) } as char {
             '/' => {
                 let new_dir = match dir {
                     Dir::Up => Dir::Right,
