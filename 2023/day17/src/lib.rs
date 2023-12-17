@@ -98,13 +98,29 @@ impl State {
     }
 }
 
+#[inline]
+fn access_cache(
+    dist: &mut Vec<usize>,
+    width: usize,
+    height: usize,
+    max_straight: usize,
+    pos: Pos,
+    straight: usize,
+    dir: Direction,
+) -> &mut usize {
+    let mul1 = width * height; // for max_straight
+    let mul2 = mul1 * (max_straight + 1); // for dirs
+    dist.get_mut(pos.0 * width + pos.1 + mul1 * straight + dir.ord() * mul2)
+        .unwrap()
+}
+
 fn dijkstra(s: &str, max_straight: usize, min_straight: usize) -> usize {
     let width = s.find('\n').unwrap();
     let height = (s.len() + 1) / (width + 1);
 
     let goal = (height - 1, width - 1);
 
-    let mut dist = vec![vec![vec![usize::MAX; width * height]; max_straight + 1]; 4];
+    let mut dist = vec![usize::MAX; width * height * (max_straight + 1) * 4];
     let mut queue: BinaryHeap<State> = BinaryHeap::new();
 
     queue.push(State {
@@ -130,7 +146,15 @@ fn dijkstra(s: &str, max_straight: usize, min_straight: usize) -> usize {
         }
 
         if state.cost
-            > dist[state.dir.ord()][state.straights_available][state.pos.0 * width + state.pos.1]
+            > *access_cache(
+                &mut dist,
+                width,
+                height,
+                max_straight,
+                state.pos,
+                state.straights_available,
+                state.dir,
+            )
         {
             // cheaper path exists
             continue;
@@ -170,12 +194,17 @@ fn dijkstra(s: &str, max_straight: usize, min_straight: usize) -> usize {
                 state
             })
             .for_each(|state| {
-                if state.cost
-                    < dist[state.dir.ord()][state.straights_available]
-                        [state.pos.0 * width + state.pos.1]
-                {
-                    dist[state.dir.ord()][state.straights_available]
-                        [state.pos.0 * width + state.pos.1] = state.cost;
+                let item = access_cache(
+                    &mut dist,
+                    width,
+                    height,
+                    max_straight,
+                    state.pos,
+                    state.straights_available,
+                    state.dir,
+                );
+                if state.cost < *item {
+                    *item = state.cost;
                     queue.push(state);
                 }
             })
