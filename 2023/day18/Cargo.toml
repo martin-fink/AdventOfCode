@@ -12,3 +12,10 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0.75"
 aoc = { path = "../aoc" }
+
+[dev-dependencies]
+criterion = "0.5.1"
+
+[[bench]]
+name = "benchmark"
+harness = false

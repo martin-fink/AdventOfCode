@@ -74,8 +74,8 @@ pub fn part1(s: &str) -> isize {
 
 pub fn part2(s: &str) -> isize {
     compute_area(s, |line| {
-        let num = line.split(' ').nth(2).unwrap();
-        let dir = match num.as_bytes()[num.len() - 2] as char {
+        let idx = line.find('#').unwrap();
+        let dir = match line.as_bytes()[line.len() - 2] as char {
             '0' => Dir::Right,
             '1' => Dir::Down,
             '2' => Dir::Left,
@@ -84,7 +84,24 @@ pub fn part2(s: &str) -> isize {
         };
         (
             dir,
-            isize::from_str_radix(&num[2..num.len() - 2], 16).unwrap(),
+            isize::from_str_radix(&line[idx + 1..line.len() - 2], 16).unwrap(),
         )
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{part1, part2};
+
+    #[test]
+    fn p1() {
+        let input = include_str!("../input/input.txt");
+        assert_eq!(part1(input), 62365);
+    }
+
+    #[test]
+    fn p2() {
+        let input = include_str!("../input/input.txt");
+        assert_eq!(part2(input), 159485361249806);
+    }
 }
