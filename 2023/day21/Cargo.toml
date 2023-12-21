@@ -12,5 +12,4 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0.75"
 aoc = { path = "../aoc" }
-num = "0.4.1"
 
