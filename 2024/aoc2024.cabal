@@ -18,3 +18,11 @@ executable day01
     default-language: GHC2021
     other-modules:    Aoc
 
+executable day02
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:    base ^>=4.18.2.1
+    hs-source-dirs:   day02, aoc
+    default-language: GHC2021
+    other-modules:    Aoc
+
