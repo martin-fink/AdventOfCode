@@ -49,7 +49,7 @@ solve2 =
   sum
     . map (uncurry (*) . tripleToPair)
     . filter tripleLastElem
-    . parseMulImpl True
+    . parseMul
 
 tasks :: [(String -> Int, FilePath)]
 tasks =
