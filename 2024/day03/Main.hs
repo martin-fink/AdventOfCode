@@ -1,7 +1,10 @@
+{-# LANGUAGE ViewPatterns #-}
+
 module Main where
 
 import Aoc (runAll)
 import Data.Char (isDigit)
+import Data.List (stripPrefix)
 
 parseNum :: String -> Int -> (Maybe String, String)
 parseNum s 0 = (Just "", s)
@@ -16,7 +19,7 @@ parseNum (_ : xs) _ = (Nothing, xs)
 parseNum [] _ = (Nothing, [])
 
 parseMulImpl :: Bool -> String -> [(Int, Int, Bool)]
-parseMulImpl enabled ('m' : 'u' : 'l' : '(' : xs) =
+parseMulImpl enabled (stripPrefix "mul(" -> Just xs) =
   case parseNum xs 3 of
     (Just num, ',' : xs') ->
       case parseNum xs' 3 of
@@ -24,8 +27,8 @@ parseMulImpl enabled ('m' : 'u' : 'l' : '(' : xs) =
           (read num, read num', enabled) : parseMulImpl enabled xs''
         (_, xs'') -> parseMulImpl enabled xs''
     (_, xs') -> parseMulImpl enabled xs'
-parseMulImpl _ ('d' : 'o' : '(' : ')' : xs) = parseMulImpl True xs
-parseMulImpl _ ('d' : 'o' : 'n' : '\'' : 't' : '(' : ')' : xs) = parseMulImpl False xs
+parseMulImpl _ (stripPrefix "do()" -> Just xs) = parseMulImpl True xs
+parseMulImpl _ (stripPrefix "don't()" -> Just xs) = parseMulImpl False xs
 parseMulImpl enabled (_ : xs) = parseMulImpl enabled xs
 parseMulImpl _ _ = []
 
