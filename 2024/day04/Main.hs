@@ -4,6 +4,7 @@ module Main where
 
 import Aoc (runAll)
 import Data.List (sort, stripPrefix, transpose)
+import Data.Maybe (mapMaybe)
 import Data.Universe.Helpers (diagonals)
 
 countXmas :: String -> Int
@@ -24,15 +25,14 @@ allLines s =
         ++ diagonals matrix
         ++ diagonals ((reverse . transpose) matrix)
 
-xWindows :: [String] -> [(Char, Char, Char, Char, Char)]
-xWindows = map toTuple . concatMap windows . transpose . map windows
+xWindows :: [String] -> [(Char, Char, Char, Char)]
+xWindows = concatMap (mapMaybe toTuple . windows) . transpose . map windows
   where
-    toTuple [[xa, _, xc], [_, yb, _], [za, _, zc]] = (yb, xa, zc, xc, za)
-    toTuple x = error $ show x
+    toTuple [[xa, _, xc], [_, 'A', _], [za, _, zc]] = Just (xa, zc, xc, za)
+    toTuple _ = Nothing
 
-isMasCross :: (Char, Char, Char, Char, Char) -> Bool
-isMasCross ('A', xa, zc, xc, za) = all (("MS" ==) . sort) [[xa, zc], [xc, za]]
-isMasCross _ = False
+isMasCross :: (Char, Char, Char, Char) -> Bool
+isMasCross (xa, zc, xc, za) = all (("MS" ==) . sort) [[xa, zc], [xc, za]]
 
 solve1 :: String -> Int
 solve1 = sum . map countXmas . allLines
