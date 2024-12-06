@@ -50,3 +50,11 @@ executable day05
     default-language: GHC2021
     other-modules:    Aoc
 
+executable day06
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:    base ^>=4.18.2.1, matrix, unordered-containers, hashable
+    hs-source-dirs:   day06, aoc
+    default-language: GHC2021
+    other-modules:    Aoc
+
