@@ -82,3 +82,11 @@ executable day09
     default-language: GHC2021
     other-modules:    Aoc
 
+executable day10
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:    base ^>=4.18.2.1, matrix, unordered-containers
+    hs-source-dirs:   day10, aoc
+    default-language: GHC2021
+    other-modules:    Aoc
+
