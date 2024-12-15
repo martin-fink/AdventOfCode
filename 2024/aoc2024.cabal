@@ -122,3 +122,11 @@ executable day14
     default-language: GHC2021
     other-modules:    Aoc
 
+executable day15
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:    base ^>=4.18.2.1, matrix, split
+    hs-source-dirs:   day15, aoc
+    default-language: GHC2021
+    other-modules:    Aoc
+
