@@ -114,3 +114,11 @@ executable day13
     default-language: GHC2021
     other-modules:    Aoc
 
+executable day14
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:    base ^>=4.18.2.1, regex-tdfa, unordered-containers
+    hs-source-dirs:   day14, aoc
+    default-language: GHC2021
+    other-modules:    Aoc
+
